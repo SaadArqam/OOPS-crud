@@ -1,15 +1,11 @@
 import express, { Application, Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
-import dotenv from "dotenv";
-import { bookRouter } from "./routes/book.routes";
-
-dotenv.config();
+/* load environment variables without requiring types for dotenv */
+require("dotenv").config();
+import { eventRouter } from "./routes/event.routes";
 
 interface AppInterface {
-  startServer(): void;
-  connectDatabase(): Promise<void>;
-  initializeMiddlewares(): void;
-  initializeRoutes(): void;
+  startServer(): Promise<void>;
 }
 
 export class App implements AppInterface {
@@ -32,9 +28,8 @@ export class App implements AppInterface {
     });
   }
 
-  public async connectDatabase(): Promise<void> {
-    const uri =
-      process.env.MONGO_URI || "mongodb://127.0.0.1:27017/sesd_workshop";
+  private async connectDatabase(): Promise<void> {
+    const uri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/eventdb";
 
     try {
       await mongoose.connect(uri);
@@ -45,26 +40,24 @@ export class App implements AppInterface {
     }
   }
 
-  public initializeMiddlewares(): void {
+  private initializeMiddlewares(): void {
     this.app.use(express.json());
   }
 
-  public initializeRoutes(): void {
+  private initializeRoutes(): void {
     this.app.get("/", (_req: Request, res: Response) => {
-      res.json({ message: "OOP CRUD API is running" });
+      res.json({ message: "Event Management API (OOP + TS)" });
     });
 
-    this.app.use("/api/books", bookRouter);
+    this.app.use("/api/events", eventRouter);
   }
 
   private initializeErrorHandling(): void {
-
     this.app.use(
-      (err: Error, _req: Request, res: Response, _next: NextFunction) => {
+      (err: any, _req: Request, res: Response, _next: NextFunction) => {
         console.error(err);
-        res
-          .status(400)
-          .json({ success: false, message: err.message || "Something went wrong" });
+        const status = err.statusCode || 400;
+        res.status(status).json({ success: false, message: err.message || "Something went wrong" });
       }
     );
   }

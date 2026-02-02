@@ -1,1 +1,1 @@
-## OOP CRUD Backend – Books API
+## OOP CRUD Backend – Event Management API
